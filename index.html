@@ -6,7 +6,7 @@
 <style>    
 body { margin:0; overflow:hidden; background:#111; font-family:sans-serif; touch-action:none; }
 canvas { display:block; }
-<div id="adBanner" style="
+#adBanner {
     position:absolute;
     top:0;
     left:0;
@@ -20,11 +20,8 @@ canvas { display:block; }
     font-weight:bold;
     z-index:30;
     font-family:sans-serif;
-">
-    Your Ad Here
-</div>
-    
-#hud { position:absolute; top:20px; left:20px; color:#fff; font-size:20px; z-index:10; font-weight:bold; text-shadow: 2px 2px 5px #000; }
+}
+#hud { position:absolute; top:60px; left:20px; color:#fff; font-size:20px; z-index:10; font-weight:bold; text-shadow: 2px 2px 5px #000; }
 #hud span { margin-left:10px; color:#ffdd00; }
 #homeScreen, #gameOverOverlay, #videoAdOverlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; z-index:20; font-family:sans-serif; }
 #homeScreen h1 { font-size:3em; margin-bottom:20px; text-shadow: 0 0 20px #ffdd00; }
@@ -36,25 +33,7 @@ video { width:80%; max-width:600px; border-radius:10px; margin-top:20px; }
 </style>
 </head>
 <body>
-<div id="adBanner" style="
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:50px;
-    background:#222;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    z-index:30;
-    font-family:sans-serif;
-">
-    Your Ad Here
-</div>
-  
-
+<div id="adBanner">Your Ad Here</div>
 <div id="hud">Score: <span id="score">0</span> | Coins: <span id="coins">0</span></div>
 
 <div id="homeScreen">
@@ -101,9 +80,9 @@ let dirLight=new THREE.DirectionalLight(0xffffff,0.6);
 dirLight.position.set(50,100,50);
 scene.add(dirLight);
 
-// ===== Stars =====
+// ===== Stars (Reduced for performance) =====
 let starGeo=new THREE.BufferGeometry();
-let starPositions=new Float32Array(5000*3);
+let starPositions=new Float32Array(1500*3); // reduced from 5000 to 1500
 for(let i=0;i<starPositions.length;i++) starPositions[i]=(Math.random()-0.5)*2000;
 starGeo.setAttribute('position',new THREE.BufferAttribute(starPositions,3));
 scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.5})));
@@ -185,27 +164,6 @@ function addLamp(x,z){
   lamps.push(lamp);
 }
 for(let i=0;i<15;i++){ addLamp(-7,-i*40); addLamp(7,-i*40); }
-
-// ===== Poles with Wires =====
-let polesLeft=[], polesRight=[], wiresLeft=[], wiresRight=[];
-function addPoleLine(xStart, zOffset, count, polesArray, wiresArray){
-  for(let i=0;i<count;i++){
-    let poleMat = new THREE.MeshStandardMaterial({color:0x888888,emissive:0x4444ff,emissiveIntensity:0.5});
-    let pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,8,12), poleMat);
-    pole.position.set(xStart, 4, -i*50 - zOffset); scene.add(pole); polesArray.push(pole);
-    if(i>0){
-      let prev = polesArray[i-1];
-      let wireGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(prev.position.x, prev.position.y + 3.5, prev.position.z),
-        new THREE.Vector3(pole.position.x, pole.position.y + 3.5, pole.position.z)
-      ]);
-      let wire = new THREE.Line(wireGeo,new THREE.LineBasicMaterial({color:0x00ffff, linewidth:2}));
-      scene.add(wire); wiresArray.push(wire);
-    }
-  }
-}
-addPoleLine(-12,30,10,polesLeft,wiresLeft);
-addPoleLine(12,30,10,polesRight,wiresRight);
 
 // ===== Player =====
 let player=new THREE.Group();
@@ -324,10 +282,13 @@ function endGame(type="rock"){
 }
 
 // ===== Animate =====
-function animate(){
-  if(!gameStarted) return;
+let lastFrameTime=0;
+function animate(time){
   requestAnimationFrame(animate);
-  if(gameOver || paused) return;
+  if(!gameStarted || gameOver || paused) return;
+
+  if(time-lastFrameTime<16) return; // cap ~60 FPS
+  lastFrameTime=time;
 
   // Player Movement
   player.position.x += (targetLane*4 - player.position.x) * 0.25;
@@ -413,6 +374,5 @@ document.getElementById("continueAfterAdBtn").onclick=()=>{ document.getElementB
 
 window.addEventListener("resize",()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
 </script>
-
 </body>
 </html>
