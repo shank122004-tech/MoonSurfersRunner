@@ -70,8 +70,8 @@ scene.add(dirLight);
 
 // ===== Stars (Reduced for performance) =====
 let starGeo=new THREE.BufferGeometry();
-let starPositions=new Float32Array(30000*3); 
-for(let i=0;i<starPositions.length;i++) starPositions[i]=(Math.random()-0.5)*2000;
+let starPositions=new Float32Array(40000*3); 
+for(let i=0;i<starPositions.length;i++) starPositions[i]=(Math.random()-0.5)*20000;
 starGeo.setAttribute('position',new THREE.BufferAttribute(starPositions,3));
 scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.5})));
 
