@@ -7,19 +7,7 @@
 body { margin:0; overflow:hidden; background:#111; font-family:sans-serif; touch-action:none; }
 canvas { display:block; }
 #adBanner {
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:50px;
-    background:#222;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    z-index:30;
-    font-family:sans-serif;
+    position:absolute; top:0; left:0; width:100%; height:50px; background:#222; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:30; font-family:sans-serif;
 }
 #hud { position:absolute; top:60px; left:20px; color:#fff; font-size:20px; z-index:10; font-weight:bold; text-shadow: 2px 2px 5px #000; }
 #hud span { margin-left:10px; color:#ffdd00; }
@@ -82,7 +70,7 @@ scene.add(dirLight);
 
 // ===== Stars (Reduced for performance) =====
 let starGeo=new THREE.BufferGeometry();
-let starPositions=new Float32Array(1500*3); // reduced from 5000 to 1500
+let starPositions=new Float32Array(1500*3); 
 for(let i=0;i<starPositions.length;i++) starPositions[i]=(Math.random()-0.5)*2000;
 starGeo.setAttribute('position',new THREE.BufferAttribute(starPositions,3));
 scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.5})));
@@ -194,7 +182,7 @@ for(let i=0;i<5;i++){
 }
 
 // ===== Side UFOs =====
-let sideUFOs=[];
+let sideUFOs=[]
 for(let i=0;i<10;i++){
   let ufoGeo=new THREE.CylinderGeometry(0.5,1,0.4,32);
   let ufoMat=new THREE.MeshStandardMaterial({color:0x00ff00,emissive:0x00ff00,emissiveIntensity:0.5,metalness:0.8,roughness:0.3});
@@ -210,7 +198,7 @@ for(let i=0;i<10;i++){
 }
 
 // ===== Asteroids =====
-let asteroids=[];
+let asteroids=[]
 for(let i=0;i<10;i++){
   let geo=new THREE.IcosahedronGeometry(1+Math.random(),0);
   let mat=new THREE.MeshStandardMaterial({color:0x888888});
@@ -220,7 +208,7 @@ for(let i=0;i<10;i++){
 }
 
 // ===== Coins =====
-let coins=[];
+let coins=[]
 for(let i=0;i<30;i++){
   let coinGeo=new THREE.TorusGeometry(0.5,0.15,16,32);
   let coinMat=new THREE.MeshStandardMaterial({color:0xffdd00,emissive:0xffdd00,metalness:0.5,roughness:0.2});
@@ -265,103 +253,89 @@ function spawnRollingRock(){
 
 // ===== Game Over =====
 function endGame(type="rock"){ 
+  if(gameOver) return;
   gameOver=true; playerDeathPosition={x:player.position.x,y:player.position.y,z:player.position.z};
   document.getElementById("gameOverOverlay").style.display="flex";
-
-  if(type==="rock"){
-    let spaceship=new THREE.Group();
-    let body=new THREE.Mesh(new THREE.ConeGeometry(1,2,12), new THREE.MeshStandardMaterial({color:0x00ffff}));
-    body.rotation.x=Math.PI/2; spaceship.add(body);
-    spaceship.position.set(player.position.x,player.position.y,player.position.z);
-    scene.add(spaceship);
-    let flyInterval=setInterval(()=>{
-      spaceship.position.y+=0.5; spaceship.position.z-=0.5;
-      if(spaceship.position.y>player.position.y+10){ clearInterval(flyInterval); scene.remove(spaceship);}
-    },16);
-  }
 }
 
 // ===== Animate =====
 let lastFrameTime=0;
 function animate(time){
   requestAnimationFrame(animate);
-  if(!gameStarted || gameOver || paused) return;
+  if(!gameStarted || paused) return;
 
-  if(time-lastFrameTime<16) return; // cap ~60 FPS
+  // limit FPS to 144
+  if(time-lastFrameTime<1000/144) return;
   lastFrameTime=time;
 
-  // Player Movement
-  player.position.x += (targetLane*4 - player.position.x) * 0.25;
-  if(isJumping){ player.position.y+=jumpVel; jumpVel+=gravity; if(player.position.y<=1){player.position.y=1;isJumping=false;} }
+  if(!gameOver){
+    // Player Movement
+    player.position.x += (targetLane*4 - player.position.x) * 0.25;
+    if(isJumping){ player.position.y+=jumpVel; jumpVel+=gravity; if(player.position.y<=1){player.position.y=1;isJumping=false;} }
 
-  let leanAngle=(targetLane - player.position.x/4)*0.2;
-  torso.rotation.z=leanAngle;
-  leftArm.rotation.x=Math.sin(Date.now()*0.015)*0.6;
-  rightArm.rotation.x=-Math.sin(Date.now()*0.015)*0.6;
-  leftLeg.rotation.x=-Math.sin(Date.now()*0.015)*0.6;
-  rightLeg.rotation.x=Math.sin(Date.now()*0.015)*0.6;
+    // Player animations
+    torso.rotation.z=(targetLane - player.position.x/4)*0.2;
+    leftArm.rotation.x=Math.sin(Date.now()*0.015)*0.6;
+    rightArm.rotation.x=-Math.sin(Date.now()*0.015)*0.6;
+    leftLeg.rotation.x=-Math.sin(Date.now()*0.015)*0.6;
+    rightLeg.rotation.x=Math.sin(Date.now()*0.015)*0.6;
 
-  // Move Tracks & Scenery
-  moonSurface.position.z+=speed; if(moonSurface.position.z>0) moonSurface.position.z=-1000;
-  tracks.forEach(t=>{ t.position.z+=speed; if(t.position.z>0) t.position.z=-1000; });
-  trees.forEach(tr=>{ tr.position.z+=speed*0.6; if(tr.position.z>50) tr.position.z=-2000; });
-  buildings.forEach(b=>{ b.position.z+=speed*0.6; if(b.position.z>50) b.position.z=-2000; });
-  lamps.forEach(l=>{ l.position.z+=speed*0.6; if(l.position.z>50) l.position.z=-2000; });
-  planets.forEach(p=>{ p.position.z+=speed*0.2; if(p.position.z>100) p.position.z=-2000; });
+    // Move scenery
+    moonSurface.position.z+=speed; if(moonSurface.position.z>0) moonSurface.position.z=-1000;
+    tracks.forEach(t=>{ t.position.z+=speed; if(t.position.z>0) t.position.z=-1000; });
+    trees.forEach(tr=>{ tr.position.z+=speed*0.6; if(tr.position.z>50) tr.position.z=-2000; });
+    buildings.forEach(b=>{ b.position.z+=speed*0.6; if(b.position.z>50) b.position.z=-2000; });
+    lamps.forEach(l=>{ l.position.z+=speed*0.6; if(l.position.z>50) l.position.z=-2000; });
+    planets.forEach(p=>{ p.position.z+=speed*0.2; if(p.position.z>100) p.position.z=-2000; });
 
-  // Obstacles
-  spawnRollingRock();
-  for(let r of rollingRocks){
-    if(r.visible){ r.position.z+=speed+0.7; r.rotation.y+=0.05; if(r.position.z>player.position.z+15) r.visible=false; 
-      let dx=Math.abs(player.position.x-r.position.x), dz=Math.abs(player.position.z-r.position.z); 
-      if(dx<1.5 && dz<1.5) endGame("rock"); 
+    // Obstacles
+    spawnRollingRock();
+    for(let r of rollingRocks){
+      if(r.visible){ r.position.z+=speed+0.7; r.rotation.y+=0.05; if(r.position.z>player.position.z+15) r.visible=false; 
+        if(Math.abs(player.position.x-r.position.x)<1.5 && Math.abs(player.position.z-r.position.z)<1.5) endGame(); 
+      }
     }
+    ufoObstacles.forEach(ufo=>{
+      ufo.position.z+=8; ufo.rotation.y+=0.02; ufo.position.y=1.5+Math.sin(Date.now()*0.002)*0.2;
+      if(ufo.position.z>5){ ufo.position.z=-1000-Math.random()*500; ufo.position.x=(Math.floor(Math.random()*3)-1)*4; }
+      let dx=Math.abs(player.position.x-ufo.position.x), dz=Math.abs(player.position.z-ufo.position.z), dy=Math.abs(player.position.y-ufo.position.y);
+      if(dx<1.5 && dz<1.5 && dy<2) endGame();
+    });
+
+    sideUFOs.forEach(ufo=>{
+      ufo.position.z += speed*0.6;
+      if(ufo.position.z > 10) ufo.position.z = -1000 - Math.random()*500;
+      ufo.position.y += Math.sin(Date.now()*0.002 + ufo.position.x)*0.02;
+    });
+
+    asteroids.forEach(a=>{
+      a.position.z += speed*0.6;
+      a.rotation.x += 0.01; a.rotation.y += 0.01;
+      if(a.position.z > player.position.z + 15) a.position.z = -Math.random()*1000;
+      if(Math.abs(player.position.x-a.position.x)<1.5 && Math.abs(player.position.z-a.position.z)<1.5 && Math.abs(player.position.y-a.position.y)<2) endGame();
+    });
+
+    coins.forEach(coin=>{
+      coin.position.z += speed;
+      coin.rotation.y += 0.1;
+      coin.position.y = 1.5 + Math.sin(Date.now()*0.005 + coin.position.z) * 0.3;
+      if(coin.position.z > player.position.z + 15) coin.position.z = -Math.random()*1000;
+      if(Math.abs(player.position.x-coin.position.x)<1.5 && Math.abs(player.position.z-coin.position.z)<1.5 && Math.abs(player.position.y-coin.position.y)<1.5){
+        coinsCollected++; lifetimeCoins++; localStorage.setItem('moonRunnerCoins',lifetimeCoins);
+        document.getElementById("coins").innerText=coinsCollected;
+        coin.position.z = -Math.random()*1000;
+      }
+    });
+
+    // Camera follow
+    camera.position.x += (player.position.x - camera.position.x) * 0.12;
+    camera.position.y += (player.position.y+5 - camera.position.y) * 0.12;
+    camera.position.z += (player.position.z+12 - camera.position.z) * 0.12;
+    camera.lookAt(player.position.x, player.position.y+1, player.position.z-5);
+
+    // Score
+    score++; document.getElementById("score").innerText=score;
   }
-  ufoObstacles.forEach(ufo=>{
-    ufo.position.z+=8; ufo.rotation.y+=0.02; ufo.position.y=1.5+Math.sin(Date.now()*0.002)*0.2;
-    if(ufo.position.z>5){ ufo.position.z=-1000-Math.random()*500; ufo.position.x=(Math.floor(Math.random()*3)-1)*4; }
-    let dx=Math.abs(player.position.x-ufo.position.x), dz=Math.abs(player.position.z-ufo.position.z), dy=Math.abs(player.position.y-ufo.position.y);
-    if(dx<1.5 && dz<1.5 && dy<2) endGame();
-  });
-
-  // Side UFOs
-  sideUFOs.forEach(ufo=>{
-    ufo.position.z += speed*0.6;
-    if(ufo.position.z > 10) ufo.position.z = -1000 - Math.random()*500;
-    ufo.position.y += Math.sin(Date.now()*0.002 + ufo.position.x)*0.02;
-  });
-
-  // Asteroids
-  asteroids.forEach(a=>{
-    a.position.z += speed*0.6;
-    a.rotation.x += 0.01; a.rotation.y += 0.01;
-    if(a.position.z > player.position.z + 15) a.position.z = -Math.random()*1000;
-    let dx=Math.abs(player.position.x-a.position.x), dz=Math.abs(player.position.z-a.position.z), dy=Math.abs(player.position.y-a.position.y);
-    if(dx<1.5 && dz<1.5 && dy<2) endGame();
-  });
-
-  // Coins
-  coins.forEach(coin=>{
-    coin.position.z += speed;
-    coin.rotation.y += 0.1;
-    coin.position.y = 1.5 + Math.sin(Date.now()*0.005 + coin.position.z) * 0.3;
-    if(coin.position.z > player.position.z + 15) coin.position.z = -Math.random()*1000;
-    let dx=Math.abs(player.position.x-coin.position.x), dz=Math.abs(player.position.z-coin.position.z), dy=Math.abs(player.position.y-coin.position.y);
-    if(dx<1.5 && dz<1.5 && dy<1.5){
-      coinsCollected++; lifetimeCoins++; localStorage.setItem('moonRunnerCoins',lifetimeCoins);
-      document.getElementById("coins").innerText=coinsCollected;
-      coin.position.z = -Math.random()*1000;
-    }
-  });
-
-  // Camera
-  camera.position.x += (player.position.x - camera.position.x) * 0.12;
-  camera.position.y += (player.position.y+5 - camera.position.y) * 0.12;
-  camera.position.z += (player.position.z+12 - camera.position.z) * 0.12;
-  camera.lookAt(player.position.x, player.position.y+1, player.position.z-5);
-
-  // Score
-  score++; document.getElementById("score").innerText=score;
 
   renderer.render(scene,camera);
 }
@@ -373,6 +347,7 @@ document.getElementById("watchAdBtn").onclick=()=>{ paused=true; document.getEle
 document.getElementById("continueAfterAdBtn").onclick=()=>{ document.getElementById("videoAdOverlay").style.display="none"; player.position.set(playerDeathPosition.x,playerDeathPosition.y,playerDeathPosition.z); gameOver=false; paused=false; animate(); };
 
 window.addEventListener("resize",()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
+
 </script>
 </body>
 </html>
